@@ -1,6 +1,7 @@
 package com.example.tictactoe_cloud_3.controller;
 
 import com.example.tictactoe_cloud_3.messages.GameMessage;
+import com.example.tictactoe_cloud_3.messages.MoveMessage;
 import com.example.tictactoe_cloud_3.messages.RoomDTO;
 import com.example.tictactoe_cloud_3.service.TicTacToeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,30 +31,12 @@ public class TicTacToeController {
         this.messagingTemplate = messagingTemplate;
     }
 
-    @MessageMapping("/room/{roomID}")
-    public void handleMove(
-            @Payload GameMessage gameMessage,
-            @PathVariable("roomID") int roomNumber
-    ) {
-        log.info("handling move from user {} in room {}", gameMessage.getUsername(), roomNumber);
-        ticTacToeService.handleMove(roomNumber, gameMessage);
-    }
-//    @MessageMapping("/topic/{username}")
-//    @SendTo("/topic/{username}")
-//    public GameMessage handleMove(
-//            @Payload GameMessage gameMessage,
-//            @PathVariable("username") String username
-//    ) {
-//        return ticTacToeService.handleMessage(gameMessage);
-//    }
-
     @MessageMapping("/topic/lobby")
     public void joinGame(
             @Payload GameMessage gameMessage,
-            SimpMessageHeaderAccessor headerAccessor,
-            @PathVariable("username") String username
+            SimpMessageHeaderAccessor headerAccessor
     ){
-        username = gameMessage.getUsername();
+        String username = gameMessage.getUsername();
         log.info("entering function joinGame: "+username);
         headerAccessor.getSessionAttributes().put("username", username);
         RoomDTO roomDTO = ticTacToeService.chooseRoomForPlayer(username);
@@ -61,4 +44,25 @@ public class TicTacToeController {
         messagingTemplate.convertAndSend("/topic/"+username, roomDTO);
         log.info("exiting function joinGame: "+username);
     }
+
+    @MessageMapping("/room/{roomID}")
+    public void handleMove(
+            @Payload GameMessage gameMessage,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        int num = Integer.parseInt(headerAccessor.getSessionAttributes().get("room").toString());
+        log.info("gameMess"+gameMessage);
+        log.info("user: "+gameMessage.getUsername()+" move: "+gameMessage.getContent());
+
+        log.info("handling move from user {} in room {}", gameMessage.getUsername(), num);
+        ticTacToeService.handleMove(num, gameMessage);
+    }
+    //    @MessageMapping("/topic/{username}")
+//    @SendTo("/topic/{username}")
+//    public GameMessage handleMove(
+//            @Payload GameMessage gameMessage,
+//            @PathVariable("username") String username
+//    ) {
+//        return ticTacToeService.handleMessage(gameMessage);
+//    }
 }

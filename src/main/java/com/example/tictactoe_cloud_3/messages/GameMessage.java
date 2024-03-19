@@ -10,9 +10,7 @@ import lombok.*;
 @Builder
 public class GameMessage {
 
-    private MessageType type;
-    private String username;
-    private String content;
-
-    // Getters and setters
+    protected MessageType type;
+    protected String username;
+    protected String content;
 }

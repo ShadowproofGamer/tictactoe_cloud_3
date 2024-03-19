@@ -102,13 +102,17 @@ public class TicTacToeService {
 
 
     public void handleMove(int roomNumber, GameMessage gameMessage) {
+        log.info("service handleMove");
         String player = gameMessage.getUsername();
         if (gameMessage.getType() == MessageType.MOVE) {
-            int move = Integer.parseInt(gameMessage.getContent());
-            messagingTemplate.convertAndSend("/room/" + roomNumber, new MoveMessage(player, move));
+            String move = gameMessage.getContent();
+            log.info("service handles move of {}", gameMessage.getUsername());
+            messagingTemplate.convertAndSend("/topic/room/" + roomNumber, new GameMessage(MessageType.MOVE, player, String.valueOf(move)));
         } else if (gameMessage.getType() == MessageType.LEAVE) {
+            log.info("handled leave of {}", gameMessage.getUsername());
             deletePlayerFromRoom(roomNumber, gameMessage.getUsername());
         } else {
+            log.info("wrong move of {}", gameMessage.getUsername());
             messagingTemplate.convertAndSend("/topic/" + player, new GameMessage(MessageType.RESPONSEERROR, player, "Wrong data"));
         }
     }

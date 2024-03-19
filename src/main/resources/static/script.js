@@ -19,10 +19,10 @@ const restartButton = document.getElementById('restartButton');
 const usernamePage = document.getElementById('usernamePage')
 let currentPlayer = X_CLASS;
 let gameActive = true;
-let nickname = null;
+let username = null;
 var stompClient = null;
-var username = "Shadow";
 var roomNumber = null;
+var startingPlayer = null ? X_CLASS : O_CLASS;
 
 
 function connect(event) {
@@ -50,27 +50,12 @@ function onConnected() {
     stompClient.subscribe('/topic/' + username, onMessageReceived);
 
     // Tell your username to the server
-    stompClient.send("/topic/lobby",
+    stompClient.send("/app/topic/lobby",
         {},
-        JSON.stringify({type: 'JOIN', username: username, content: "Want to join"})
+        JSON.stringify({type: 'START', username: username, content: "Want to join"})
     )
 
 }
-
-
-// function sendMessage(event) {
-//     var messageContent = messageInput.value.trim();
-//     if(messageContent && stompClient) {
-//         var chatMessage = {
-//             sender: username,
-//             content: messageInput.value,
-//             type: 'CHAT'
-//         };
-//         stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
-//         messageInput.value = '';
-//     }
-//     event.preventDefault();
-// }
 
 
 function onMessageReceived(payload) {
@@ -86,71 +71,17 @@ function onMessageReceived(payload) {
     } else if (message.type === 'ROOM') {
         console.log(message.roomNumber);
         roomNumber = message.roomNumber;
+        startingPlayer = message.playerStarting;
+    } else if (message.type === 'START') {
+        stompClient.subscribe("/topic/room/" + roomNumber, onMessageReceived);
+        startGame();
+    } else if (message.type === 'MOVE' && message.username !== username) {
+        console.log('Received opponent move from server:', message.content);
+        updateBoard(message.content, O_CLASS);
     }
 }
 
-
-// let stompClient = null;
-// let selectedUserId = null;
-//
-// function connect(event) {
-//     nickname = document.querySelector('#nickname').value.trim();
-//
-//     if (nickname) {
-//         usernamePage.classList.add('hidden');
-//         gamePage.classList.remove('hidden');
-//
-//         const socket = new SockJS('/ws');
-//         stompClient = Stomp.over(socket);
-//
-//         stompClient.connect({}, onConnected, onError);
-//     }
-//     event.preventDefault();
-// }
-// function onConnected() {
-//     stompClient.subscribe(`/user/${nickname}/queue/messages`, onMessageReceived);
-//     stompClient.subscribe(`/user/public`, onMessageReceived);
-//
-//     // register the connected user
-//     stompClient.send("/app/user.addUser",
-//         {},
-//         JSON.stringify({nickName: nickname, status: 'WAITING'})
-//     );
-//     findAndDisplayConnectedUsers().then();
-// }
-//
-// socket.onopen = function(event) {
-//     console.log("WebSocket opened");
-//     socket.send("Hello, Server!");
-// };
-//
-// socket.onmessage = function(event) {
-//     console.log("Received message: " + event.data);
-// };
-//
-// socket.onclose = function(event) {
-//     console.log("WebSocket closed");
-// };
-//
-// socket.onerror = function(event) {
-//     console.error("WebSocket error: " + event);
-// };
-//
-
-
-function mockLogin() {
-    nickname = document.querySelector('#nickname').value.trim();
-
-    if (nickname) {
-        usernamePage.classList.add('hidden');
-        gamePage.classList.remove('hidden');
-
-    }
-}
-
-startGame();
-
-restartButton.addEventListener('click', startGame);
+restartButton.addEventListener('click', onConnected);
 
 function startGame() {
     gameActive = true;
@@ -176,7 +107,7 @@ function handleClick(e) {
     });
 
     // Send move data to server
-    const cellIndex = Array.from(cells).indexOf(cell);
+    const cellIndex = parseInt(Array.from(cells).indexOf(cell));
     sendMoveToServer(cellIndex);
 
     if (checkWin(currentClass)) {
@@ -219,31 +150,12 @@ function endGame(draw) {
 }
 
 function sendMoveToServer(cellIndex) {
-    // Example code to send move data to server
-    // Replace this with your actual implementation
-    const moveData = {cellIndex, currentPlayer};
-    console.log('Sending move data to server:', moveData);
-    //socket.send(JSON.stringify(moveData))
+    console.log('Sending move data to server:', cellIndex);
+    stompClient.send("/app/room/" + roomNumber,
+        {},
+        JSON.stringify({type: "MOVE", username: username, content: cellIndex.toString()})
+    );
 
-    const opponentMove = getOpponentMoveFromServer();
-    console.log('Received opponent move from server:', opponentMove);
-    updateBoard(opponentMove.cellIndex, opponentMove.currentPlayer);
-
-}
-
-function getOpponentMoveFromServer() {
-    // This function should return an object with 'cellIndex' and 'currentPlayer'
-    // representing the opponent's move
-    return {cellIndex: getRandomEmptyCellIndex(), currentPlayer: O_CLASS}; // Example: Opponent's move is randomly chosen
-}
-
-function getRandomEmptyCellIndex() {
-    // Example function to get a random empty cell index
-    // Replace this with your actual implementation
-    // This function should return the index of an empty cell on the board
-    const emptyCells = [...cells].filter(cell => !cell.classList.contains(X_CLASS) && !cell.classList.contains(O_CLASS));
-    const randomIndex = Math.floor(Math.random() * emptyCells.length);
-    return Array.from(cells).indexOf(emptyCells[randomIndex]);
 }
 
 function updateBoard(cellIndex, currentPlayer) {
@@ -257,4 +169,17 @@ function updateBoard(cellIndex, currentPlayer) {
         });
     }
 }
+
+
+
+
+// function getRandomEmptyCellIndex() {
+//     // Example function to get a random empty cell index
+//     // Replace this with your actual implementation
+//     // This function should return the index of an empty cell on the board
+//     const emptyCells = [...cells].filter(cell => !cell.classList.contains(X_CLASS) && !cell.classList.contains(O_CLASS));
+//     const randomIndex = Math.floor(Math.random() * emptyCells.length);
+//     return Array.from(cells).indexOf(emptyCells[randomIndex]);
+// }
+
 
