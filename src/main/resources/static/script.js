@@ -17,11 +17,11 @@ const statusDisplay = document.getElementById('status');
 const restartButton = document.getElementById('restartButton');
 const usernamePage = document.getElementById('usernamePage')
 let currentPlayer = X_CLASS;
-let gameActive = true;
+let gameActive = false;
 let username = null;
 var stompClient = null;
 var roomNumber = null;
-var startingPlayer = null ? X_CLASS : O_CLASS;
+var startingPlayer = null;
 
 
 function connect(event) {
@@ -69,16 +69,20 @@ function onMessageReceived(payload) {
         console.log(message.username + ' left!');
     } else if (message.type === 'ROOM') {
         console.log(message.roomNumber);
-        roomNumber = message.roomNumber;
-        startingPlayer = message.playerStarting;
+        if (startingPlayer==null){
+            startingPlayer = message.playerStarting;
+        }
+        if (roomNumber==null){
+            roomNumber = message.roomNumber;
+            stompClient.subscribe("/topic/room/" + roomNumber, onMessageReceived);
+        }
     } else if (message.type === 'START') {
-        stompClient.subscribe("/topic/room/" + roomNumber, onMessageReceived);
-        if (startingPlayer===username && !gameActive) startGame();
+        console.log(startingPlayer)
+        if (startingPlayer===username) startGame();
 
     } else if (message.type === 'MOVE' && message.username !== username) {
         console.log('Received opponent move from server:', message.content);
-        currentPlayer = username;
-        if (currentPlayer===username && !gameActive) startGame();
+        if (!gameActive) startGame();
         updateBoard(message.content, O_CLASS);
     }
 }
@@ -87,8 +91,7 @@ restartButton.addEventListener('click', onConnected);
 
 function startGame() {
     gameActive = true;
-    currentPlayer = startingPlayer;
-    statusDisplay.innerText = `${startingPlayer}'s turn`;
+    statusDisplay.innerText = `Your turn`;
     cells.forEach(cell => {
         cell.innerHTML = ""
         cell.classList.remove(X_CLASS);
@@ -100,8 +103,7 @@ function startGame() {
 
 function handleClick(e) {
     const cell = e.target;
-    const currentClass = currentPlayer === X_CLASS ? X_CLASS : O_CLASS;
-    placeMark(cell, currentClass);
+    placeMark(cell, X_CLASS);
 
     // Disable further clicks until opponent's move is received
     cells.forEach(cell => {
@@ -112,7 +114,7 @@ function handleClick(e) {
     const cellIndex = parseInt(Array.from(cells).indexOf(cell));
     sendMoveToServer(cellIndex);
 
-    if (checkWin(currentClass)) {
+    if (checkWin(X_CLASS)) {
         endGame(false);
     } else if (isDraw()) {
         endGame(true);
@@ -144,7 +146,7 @@ function endGame(draw) {
     if (draw) {
         statusDisplay.innerText = `It's a Draw!`;
     } else {
-        statusDisplay.innerText = `${currentPlayer} Wins!`;
+        statusDisplay.innerText = currentPlayer===X_CLASS?"You win!":"Rival wins!";
     }
     cells.forEach(cell => {
         cell.removeEventListener('click', handleClick);
@@ -171,17 +173,3 @@ function updateBoard(cellIndex, currentPlayer) {
         });
     }
 }
-
-
-
-
-// function getRandomEmptyCellIndex() {
-//     // Example function to get a random empty cell index
-//     // Replace this with your actual implementation
-//     // This function should return the index of an empty cell on the board
-//     const emptyCells = [...cells].filter(cell => !cell.classList.contains(X_CLASS) && !cell.classList.contains(O_CLASS));
-//     const randomIndex = Math.floor(Math.random() * emptyCells.length);
-//     return Array.from(cells).indexOf(emptyCells[randomIndex]);
-// }
-
-
