@@ -1,0 +1,17 @@
+name: tictactoe_cloud
+networks:
+  backendnet:
+    external: true
+services:
+  frontend:
+    image: PWRCloud/tictactoe_frontend
+    ports:
+      - 80:80
+    networks:
+      - backendnet
+  backend:
+    image: PWRCloud/tictactoe_backend_3
+    ports:
+      - 8080:8080
+    networks:
+      - backendnet

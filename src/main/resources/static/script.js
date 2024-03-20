@@ -1,4 +1,3 @@
-// const socket = new SockJS("ws://localhost:8080/ws");
 const X_CLASS = 'x';
 const O_CLASS = 'o';
 const WINNING_COMBINATIONS = [
@@ -74,9 +73,12 @@ function onMessageReceived(payload) {
         startingPlayer = message.playerStarting;
     } else if (message.type === 'START') {
         stompClient.subscribe("/topic/room/" + roomNumber, onMessageReceived);
-        startGame();
+        if (startingPlayer===username && !gameActive) startGame();
+
     } else if (message.type === 'MOVE' && message.username !== username) {
         console.log('Received opponent move from server:', message.content);
+        currentPlayer = username;
+        if (currentPlayer===username && !gameActive) startGame();
         updateBoard(message.content, O_CLASS);
     }
 }
@@ -85,8 +87,8 @@ restartButton.addEventListener('click', onConnected);
 
 function startGame() {
     gameActive = true;
-    currentPlayer = X_CLASS;
-    statusDisplay.innerText = `${currentPlayer}'s turn`;
+    currentPlayer = startingPlayer;
+    statusDisplay.innerText = `${startingPlayer}'s turn`;
     cells.forEach(cell => {
         cell.innerHTML = ""
         cell.classList.remove(X_CLASS);
