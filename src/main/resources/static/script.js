@@ -53,7 +53,36 @@ function onConnected() {
         {},
         JSON.stringify({type: 'START', username: username, content: "Want to join"})
     )
+    cells.forEach(cell => {
+        cell.innerHTML = ""
+        cell.classList.remove(X_CLASS);
+        cell.classList.remove(O_CLASS);
+        cell.removeEventListener('click', handleClick);
+    });
+    statusDisplay.innerText = `Waiting for game...`;
+}
 
+function onRestart(){
+    stompClient.send("/app/room/"+roomNumber,
+    {},
+    JSON.stringify({type:'LEAVE', username: username, content: "Want to leave"})
+    );
+    stompClient.unsubscribe("/room/"+roomNumber);
+    roomNumber = null;
+    startingPlayer = null;
+    cells.forEach(cell => {
+        cell.innerHTML = ""
+        cell.classList.remove(X_CLASS);
+        cell.classList.remove(O_CLASS);
+        cell.removeEventListener('click', handleClick);
+    });
+
+    // Tell your username to the server
+    stompClient.send("/app/topic/lobby",
+        {},
+        JSON.stringify({type: 'START', username: username, content: "Want to join"})
+    )
+    statusDisplay.innerText = `Waiting for game...`;
 }
 
 
@@ -65,8 +94,19 @@ function onMessageReceived(payload) {
         messageElement.classList.add('event-message');
         console.log(message.username + ' joined!');
     } else if (message.type === 'LEAVE') {
-        messageElement.classList.add('event-message');
-        console.log(message.username + ' left!');
+        gameActive = false;
+        cells.forEach(cell => {
+            cell.removeEventListener('click', handleClick);
+        });
+        statusDisplay.innerText = message.username + ' left!\nRestart if you want to play again!';
+        console.log(message.username + ' left!\nRestart if you want to play again!');
+        stompClient.send("/app/room/"+roomNumber,
+            {},
+            JSON.stringify({type:'LEAVE', username: username, content: "Want to leave"})
+        );
+        stompClient.unsubscribe("/room/"+roomNumber);
+        roomNumber = null;
+        startingPlayer = null;
     } else if (message.type === 'ROOM') {
         console.log(message.roomNumber);
         if (startingPlayer==null){
@@ -79,7 +119,7 @@ function onMessageReceived(payload) {
     } else if (message.type === 'START') {
         console.log(startingPlayer)
         if (startingPlayer===username) startGame();
-
+        else statusDisplay.innerText = `Rival's turn`;
     } else if (message.type === 'MOVE' && message.username !== username) {
         console.log('Received opponent move from server:', message.content);
         if (!gameActive) startGame();
@@ -87,7 +127,7 @@ function onMessageReceived(payload) {
     }
 }
 
-restartButton.addEventListener('click', onConnected);
+
 
 function startGame() {
     gameActive = true;
@@ -100,6 +140,8 @@ function startGame() {
         cell.addEventListener('click', handleClick, {once: true});
     });
 }
+
+
 
 function handleClick(e) {
     const cell = e.target;
@@ -114,17 +156,16 @@ function handleClick(e) {
     const cellIndex = parseInt(Array.from(cells).indexOf(cell));
     sendMoveToServer(cellIndex);
 
-    if (checkWin(X_CLASS)) {
-        endGame(false);
-    } else if (isDraw()) {
-        endGame(true);
-    }
-
 }
 
 function placeMark(cell, currentClass) {
     cell.classList.add(currentClass);
     cell.innerText = currentClass
+    if (checkWin(currentClass)) {
+        endGame(false, currentClass);
+    } else if (isDraw()) {
+        endGame(true, currentClass);
+    }
 }
 
 function checkWin(currentClass) {
@@ -141,16 +182,16 @@ function isDraw() {
     });
 }
 
-function endGame(draw) {
+function endGame(draw, currentClass) {
     gameActive = false;
-    if (draw) {
-        statusDisplay.innerText = `It's a Draw!`;
-    } else {
-        statusDisplay.innerText = currentPlayer===X_CLASS?"You win!":"Rival wins!";
-    }
     cells.forEach(cell => {
         cell.removeEventListener('click', handleClick);
     });
+    if (draw) {
+        statusDisplay.innerText = `It's a Draw!`;
+    } else {
+        statusDisplay.innerText = currentClass===X_CLASS?"You win!":"Rival wins!";
+    }
 }
 
 function sendMoveToServer(cellIndex) {
@@ -173,3 +214,5 @@ function updateBoard(cellIndex, currentPlayer) {
         });
     }
 }
+
+restartButton.addEventListener('click', onRestart);

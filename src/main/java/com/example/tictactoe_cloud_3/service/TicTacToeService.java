@@ -89,6 +89,7 @@ public class TicTacToeService {
             room.setPlayer2(null);
             room.setFreeSlots(1);
             messagingTemplate.convertAndSend("/topic/" + room.getPlayer1(), new OpponentLeftMessage(playerName));
+            roomRepo.removeRoom(room);
         }
     }
 
@@ -110,7 +111,12 @@ public class TicTacToeService {
             messagingTemplate.convertAndSend("/topic/room/" + roomNumber, new GameMessage(MessageType.MOVE, player, String.valueOf(move)));
         } else if (gameMessage.getType() == MessageType.LEAVE) {
             log.info("handled leave of {}", gameMessage.getUsername());
-            deletePlayerFromRoom(roomNumber, gameMessage.getUsername());
+            String player1 = getRoom(roomNumber).getPlayer1();
+            String player2 = getRoom(roomNumber).getPlayer2();
+            String playerSend = Objects.equals(gameMessage.getUsername(), player1)?player2:player1;
+            messagingTemplate.convertAndSend("/topic/room/"+roomNumber, new OpponentLeftMessage(playerSend));
+            deletePlayerFromRoom(roomNumber, playerSend);
+
         } else {
             log.info("wrong move of {}", gameMessage.getUsername());
             messagingTemplate.convertAndSend("/topic/" + player, new GameMessage(MessageType.RESPONSEERROR, player, "Wrong data"));
