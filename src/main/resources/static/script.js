@@ -63,13 +63,15 @@ function onConnected() {
 }
 
 function onRestart(){
-    stompClient.send("/app/room/"+roomNumber,
-    {},
-    JSON.stringify({type:'LEAVE', username: username, content: "Want to leave"})
-    );
-    stompClient.unsubscribe("/room/"+roomNumber);
-    roomNumber = null;
-    startingPlayer = null;
+    if(roomNumber!=null){
+        stompClient.unsubscribe("/room/" + roomNumber);
+        stompClient.send("/app/room/"+roomNumber,
+            {},
+            JSON.stringify({type:'LEAVE', username: username, content: "Want to leave"})
+        );
+        roomNumber = null;
+        startingPlayer = null;
+    }
     cells.forEach(cell => {
         cell.innerHTML = ""
         cell.classList.remove(X_CLASS);
@@ -88,40 +90,42 @@ function onRestart(){
 
 function onMessageReceived(payload) {
     var message = JSON.parse(payload.body);
-    var messageElement = document.createElement('li');
     console.log(message);
     if (message.type === 'JOIN') {
-        messageElement.classList.add('event-message');
         console.log(message.username + ' joined!');
     } else if (message.type === 'LEAVE') {
         gameActive = false;
         cells.forEach(cell => {
             cell.removeEventListener('click', handleClick);
         });
-        statusDisplay.innerText = message.username + ' left!\nRestart if you want to play again!';
+        statusDisplay.innerText = 'Player left!\nRestart to play again!';
         console.log(message.username + ' left!\nRestart if you want to play again!');
+        stompClient.unsubscribe("/room/"+roomNumber);
         stompClient.send("/app/room/"+roomNumber,
             {},
             JSON.stringify({type:'LEAVE', username: username, content: "Want to leave"})
         );
-        stompClient.unsubscribe("/room/"+roomNumber);
         roomNumber = null;
         startingPlayer = null;
     } else if (message.type === 'ROOM') {
-        console.log(message.roomNumber);
-        if (startingPlayer==null){
+        // console.log(message.roomNumber);
+        if (startingPlayer==null && message.playerStarting!=null){
             startingPlayer = message.playerStarting;
+            if (startingPlayer===username) startGame();
+            else statusDisplay.innerText = `Rival's turn`;
         }
         if (roomNumber==null){
             roomNumber = message.roomNumber;
             stompClient.subscribe("/topic/room/" + roomNumber, onMessageReceived);
         }
+
     } else if (message.type === 'START') {
         console.log(startingPlayer)
-        if (startingPlayer===username) startGame();
-        else statusDisplay.innerText = `Rival's turn`;
+
+
     } else if (message.type === 'MOVE' && message.username !== username) {
         console.log('Received opponent move from server:', message.content);
+        statusDisplay.innerText = `Your turn`;
         if (!gameActive) startGame();
         updateBoard(message.content, O_CLASS);
     }
@@ -145,7 +149,8 @@ function startGame() {
 
 function handleClick(e) {
     const cell = e.target;
-    placeMark(cell, X_CLASS);
+    // placeMark(cell, X_CLASS);
+
 
     // Disable further clicks until opponent's move is received
     cells.forEach(cell => {
@@ -154,6 +159,8 @@ function handleClick(e) {
 
     // Send move data to server
     const cellIndex = parseInt(Array.from(cells).indexOf(cell));
+
+    updateBoard(cellIndex, X_CLASS);
     sendMoveToServer(cellIndex);
 
 }
@@ -200,14 +207,14 @@ function sendMoveToServer(cellIndex) {
         {},
         JSON.stringify({type: "MOVE", username: username, content: cellIndex.toString()})
     );
-
+    if(gameActive) statusDisplay.innerText = `Rival's turn`;
 }
 
 function updateBoard(cellIndex, currentPlayer) {
     const cell = cells[cellIndex];
     const currentClass = currentPlayer === X_CLASS ? X_CLASS : O_CLASS;
     placeMark(cell, currentClass);
-    if (!checkWin(currentClass) && !isDraw()) {
+    if (!checkWin(currentClass) && !isDraw() && currentClass===O_CLASS) {
         // If the game is not over, enable player to make another move
         cells.forEach(cell => {
             cell.addEventListener('click', handleClick, {once: true});
