@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe in Vue</title>
+    <link rel="stylesheet" href="vueStyles.css">
+</head>
+<body>
+<div id="app">
+    <div v-if="!loggedIn" class="container">
+        <input type="text" v-model="username">
+        <button @click="connect">Enter the game</button>
+    </div>
+    <div v-else class="container" :class="{ hidden: !loggedIn }">
+        <h1>Tic Tac Toe</h1>
+        <div class="board" >
+            <div v-for="(cell, index) in cells"
+                 :key="index"
+                 :data-cell="index"
+                 class="cell"
+                 @click="handleClick(index)"
+                 :style="{ pointerEvents: gameActive && currentPlayer === 'x' ? 'auto' : 'none'}">
+                {{ cell }}
+            </div>
+        </div>
+        <p class="status" v-html="statusDisplay"></p>
+        <button class="restart-button" @click="onLeave">Restart</button>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.1.4/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script src="vueScript.js"></script>
+</body>
+</html>
