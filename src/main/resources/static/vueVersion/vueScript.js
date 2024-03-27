@@ -109,13 +109,14 @@ new Vue({
                 this.startingPlayer = null;
             } else if (message.type === 'ROOM') {
                 // console.log(message.roomNumber);
-                if (this.startingPlayer == null && message.playerStarting != null) {
+                if (message.playerStarting != null) {
+                    this.gameEnded = false;
                     this.startingPlayer = message.playerStarting;
                     if (this.startingPlayer === this.userGUID) this.startGame();
                     else {
                         this.statusDisplay = `Rival's turn`;
                         this.currentPlayer=O_CLASS;
-                        this.gameEnded = false;
+
                     }
                 }
                 if (this.roomNumber == null) {
