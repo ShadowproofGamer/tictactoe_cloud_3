@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @Builder
@@ -13,9 +15,9 @@ public class RoomDTO {
 
     private final MessageType type = MessageType.ROOM;
     private int roomNumber;
-    private String player1;
-    private String player2;
-    private String playerStarting;
+    private UUID player1;
+    private UUID player2;
+    private UUID playerStarting;
     private int freeSlots;
 
 

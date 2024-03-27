@@ -1,8 +1,9 @@
 # Use a lightweight Nginx image
 FROM nginx:alpine
-
 # Set the working directory in the container
 WORKDIR /usr/share/nginx/html
+#prevent docker boost
+#COPY static/stopboost.txt .
 # Copy the static files to the Nginx directory
 COPY static .
 

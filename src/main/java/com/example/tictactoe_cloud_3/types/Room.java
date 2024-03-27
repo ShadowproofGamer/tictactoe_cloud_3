@@ -2,6 +2,8 @@ package com.example.tictactoe_cloud_3.types;
 
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @Builder
@@ -9,9 +11,9 @@ import lombok.*;
 @AllArgsConstructor
 public class Room {
     private int roomNumber;
-    private String player1;
-    private String player2;
-    private String playerStarting;
+    private UUID player1;
+    private UUID player2;
+    private UUID playerStarting;
     private final int maxSlots=2;
     private int freeSlots;
 

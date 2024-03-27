@@ -10,9 +10,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GameMessage {
+public class JoinMessage {
 
     protected MessageType type;
-    protected UUID username;
+    protected String username;
     protected String content;
 }

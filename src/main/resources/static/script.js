@@ -15,13 +15,17 @@ const board = document.getElementById('board');
 const cells = document.querySelectorAll('.cell');
 const statusDisplay = document.getElementById('status');
 const restartButton = document.getElementById('restartButton');
+const loginButton = document.getElementById('loginButton');
 const usernamePage = document.getElementById('usernamePage')
 let currentPlayer = X_CLASS;
 let gameActive = false;
 let username = null;
-var stompClient = null;
-var roomNumber = null;
-var startingPlayer = null;
+let userGUID = null;
+let stompClient = null;
+let personalConnection = null;
+let roomConnection = null;
+let roomNumber = null;
+let startingPlayer = null;
 
 
 function connect(event) {
@@ -31,7 +35,7 @@ function connect(event) {
         usernamePage.classList.add('hidden');
         gamePage.classList.remove('hidden');
 
-        var socket = new SockJS('http://localhost:8080/ws');
+        const socket = new SockJS('http://localhost:8080/ws');
         stompClient = Stomp.over(socket);
 
         stompClient.connect({}, onConnected, onError);
@@ -46,12 +50,12 @@ function onError() {
 
 function onConnected() {
     // Subscribe to the Public Topic
-    stompClient.subscribe('/topic/' + username, onMessageReceived);
+    personalConnection = stompClient.subscribe('/topic/' + username, onMessageReceived);
 
     // Tell your username to the server
-    stompClient.send("/app/topic/lobby",
+    stompClient.send("/app/topic/login",
         {},
-        JSON.stringify({type: 'START', username: username, content: "Want to join"})
+        JSON.stringify({type: 'LOGIN', username: username, content: "Want to join"})
     )
     cells.forEach(cell => {
         cell.innerHTML = ""
@@ -62,12 +66,12 @@ function onConnected() {
     statusDisplay.innerText = `Waiting for game...`;
 }
 
-function onRestart(){
+function onLeave() {
     if(roomNumber!=null){
-        stompClient.unsubscribe("/room/" + roomNumber);
+        roomConnection.unsubscribe();
         stompClient.send("/app/room/"+roomNumber,
             {},
-            JSON.stringify({type:'LEAVE', username: username, content: "Want to leave"})
+            JSON.stringify({type:'LEAVE', username: userGUID, content: "Want to leave"})
         );
         roomNumber = null;
         startingPlayer = null;
@@ -78,11 +82,15 @@ function onRestart(){
         cell.classList.remove(O_CLASS);
         cell.removeEventListener('click', handleClick);
     });
+    onRestart()
+}
+function onRestart(){
 
-    // Tell your username to the server
+
+    //Tell your username to the server
     stompClient.send("/app/topic/lobby",
         {},
-        JSON.stringify({type: 'START', username: username, content: "Want to join"})
+        JSON.stringify({type: 'START', username: userGUID, content: "Want to join"})
     )
     statusDisplay.innerText = `Waiting for game...`;
 }
@@ -91,39 +99,47 @@ function onRestart(){
 function onMessageReceived(payload) {
     var message = JSON.parse(payload.body);
     console.log(message);
-    if (message.type === 'JOIN') {
+
+
+    if (message.type === 'LOGIN') {
+        userGUID = message.username;
+        personalConnection.unsubscribe()
+        personalConnection = stompClient.subscribe('/topic/'+userGUID, onMessageReceived)
         console.log(message.username + ' joined!');
+
+
+        // Tell the server, that you want to start a game
+        stompClient.send("/app/topic/lobby",
+            {},
+            JSON.stringify({type: 'START', username: userGUID, content: "Want to start the game"})
+        )
     } else if (message.type === 'LEAVE') {
         gameActive = false;
         cells.forEach(cell => {
             cell.removeEventListener('click', handleClick);
         });
-        statusDisplay.innerText = 'Player left!\nRestart to play again!';
+        statusDisplay.innerText = 'Rival left!\nRestart to play again!';
         console.log(message.username + ' left!\nRestart if you want to play again!');
-        stompClient.unsubscribe("/room/"+roomNumber);
-        stompClient.send("/app/room/"+roomNumber,
-            {},
-            JSON.stringify({type:'LEAVE', username: username, content: "Want to leave"})
-        );
+        roomConnection.unsubscribe();
         roomNumber = null;
         startingPlayer = null;
     } else if (message.type === 'ROOM') {
         // console.log(message.roomNumber);
         if (startingPlayer==null && message.playerStarting!=null){
             startingPlayer = message.playerStarting;
-            if (startingPlayer===username) startGame();
+            if (startingPlayer===userGUID) startGame();
             else statusDisplay.innerText = `Rival's turn`;
         }
         if (roomNumber==null){
             roomNumber = message.roomNumber;
-            stompClient.subscribe("/topic/room/" + roomNumber, onMessageReceived);
+            roomConnection = stompClient.subscribe("/topic/room/" + roomNumber, onMessageReceived);
         }
 
     } else if (message.type === 'START') {
         console.log(startingPlayer)
 
 
-    } else if (message.type === 'MOVE' && message.username !== username) {
+    } else if (message.type === 'MOVE' && message.username !== userGUID) {
         console.log('Received opponent move from server:', message.content);
         statusDisplay.innerText = `Your turn`;
         if (!gameActive) startGame();
@@ -205,7 +221,7 @@ function sendMoveToServer(cellIndex) {
     console.log('Sending move data to server:', cellIndex);
     stompClient.send("/app/room/" + roomNumber,
         {},
-        JSON.stringify({type: "MOVE", username: username, content: cellIndex.toString()})
+        JSON.stringify({type: "MOVE", username: userGUID, content: cellIndex.toString()})
     );
     if(gameActive) statusDisplay.innerText = `Rival's turn`;
 }
@@ -222,4 +238,6 @@ function updateBoard(cellIndex, currentPlayer) {
     }
 }
 
-restartButton.addEventListener('click', onRestart);
+// leaveButton.addEventlistener('click', onLeave)
+restartButton.addEventListener('click', onLeave);
+loginButton.addEventListener('click', connect);
