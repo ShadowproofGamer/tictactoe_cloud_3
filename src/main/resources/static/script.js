@@ -67,11 +67,11 @@ function onConnected() {
 }
 
 function onLeave() {
-    if(roomNumber!=null){
+    if (roomNumber != null) {
         roomConnection.unsubscribe();
-        stompClient.send("/app/room/"+roomNumber,
+        stompClient.send("/app/room/" + roomNumber,
             {},
-            JSON.stringify({type:'LEAVE', username: userGUID, content: "Want to leave"})
+            JSON.stringify({type: 'LEAVE', username: userGUID, content: "Want to leave"})
         );
         roomNumber = null;
         startingPlayer = null;
@@ -84,7 +84,8 @@ function onLeave() {
     });
     onRestart()
 }
-function onRestart(){
+
+function onRestart() {
 
 
     //Tell your username to the server
@@ -104,7 +105,7 @@ function onMessageReceived(payload) {
     if (message.type === 'LOGIN') {
         userGUID = message.username;
         personalConnection.unsubscribe()
-        personalConnection = stompClient.subscribe('/topic/'+userGUID, onMessageReceived)
+        personalConnection = stompClient.subscribe('/topic/' + userGUID, onMessageReceived)
         console.log(message.username + ' joined!');
 
 
@@ -125,12 +126,12 @@ function onMessageReceived(payload) {
         startingPlayer = null;
     } else if (message.type === 'ROOM') {
         // console.log(message.roomNumber);
-        if (startingPlayer==null && message.playerStarting!=null){
+        if (startingPlayer == null && message.playerStarting != null) {
             startingPlayer = message.playerStarting;
-            if (startingPlayer===userGUID) startGame();
+            if (startingPlayer === userGUID) startGame();
             else statusDisplay.innerText = `Rival's turn`;
         }
-        if (roomNumber==null){
+        if (roomNumber == null) {
             roomNumber = message.roomNumber;
             roomConnection = stompClient.subscribe("/topic/room/" + roomNumber, onMessageReceived);
         }
@@ -148,7 +149,6 @@ function onMessageReceived(payload) {
 }
 
 
-
 function startGame() {
     gameActive = true;
     statusDisplay.innerText = `Your turn`;
@@ -160,7 +160,6 @@ function startGame() {
         cell.addEventListener('click', handleClick, {once: true});
     });
 }
-
 
 
 function handleClick(e) {
@@ -213,7 +212,7 @@ function endGame(draw, currentClass) {
     if (draw) {
         statusDisplay.innerText = `It's a Draw!`;
     } else {
-        statusDisplay.innerText = currentClass===X_CLASS?"You win!":"Rival wins!";
+        statusDisplay.innerText = currentClass === X_CLASS ? "You win!" : "Rival wins!";
     }
 }
 
@@ -223,14 +222,14 @@ function sendMoveToServer(cellIndex) {
         {},
         JSON.stringify({type: "MOVE", username: userGUID, content: cellIndex.toString()})
     );
-    if(gameActive) statusDisplay.innerText = `Rival's turn`;
+    if (gameActive) statusDisplay.innerText = `Rival's turn`;
 }
 
 function updateBoard(cellIndex, currentPlayer) {
     const cell = cells[cellIndex];
     const currentClass = currentPlayer === X_CLASS ? X_CLASS : O_CLASS;
     placeMark(cell, currentClass);
-    if (!checkWin(currentClass) && !isDraw() && currentClass===O_CLASS) {
+    if (!checkWin(currentClass) && !isDraw() && currentClass === O_CLASS) {
         // If the game is not over, enable player to make another move
         cells.forEach(cell => {
             cell.addEventListener('click', handleClick, {once: true});
