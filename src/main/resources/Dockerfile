@@ -5,9 +5,9 @@ WORKDIR /usr/share/nginx/html
 #prevent docker boost
 #COPY static/stopboost.txt .
 # Copy the static files to the Nginx directory
-COPY vueVersion/index.html .
-COPY vueVersion/vueScript.js .
-COPY vueVersion/vueStyles.css .
+COPY static/index.html .
+COPY static/vueScript.js .
+COPY static/vueStyles.css .
 
 # Expose port 80 to the outside world
 EXPOSE 80

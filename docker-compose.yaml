@@ -1,17 +1,10 @@
 name: tictactoe_cloud
-#networks:
-#  backendnet:
-#    external: true
 services:
   frontend:
     image: new_front
     ports:
       - 80:80
-#    networks:
-#      - backendnet
   backend:
     image: new_back
     ports:
       - 8080:8080
-#    networks:
-#      - backendnet
