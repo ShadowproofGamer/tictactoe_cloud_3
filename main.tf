@@ -19,6 +19,13 @@ resource "aws_instance" "web" {
     Name = "TicTacToe Cloud"
   }
 }
+#Define ECR images/repo
+resource "aws_ecr_repository" "frontend-ecr-repo" {
+  name = "new_front"
+}
+resource "aws_ecr_repository" "backend-ecr-repo" {
+  name = "new_back"
+}
 # Define ECS cluster
 resource "aws_ecs_cluster" "tictactoe_cluster" {
   name = "tictactoe-cluster"
@@ -26,12 +33,13 @@ resource "aws_ecs_cluster" "tictactoe_cluster" {
 
 # Define ECS task definition for frontend
 resource "aws_ecs_task_definition" "frontend_task" {
-  family                   = "frontend-task"
-  container_definitions   = <<DEFINITION
+  family                = "frontend-task"
+  container_definitions = <<DEFINITION
 [
   {
     "name": "frontend",
     "image": "new_front",
+    "memory": 256,
     "portMappings": [
       {
         "containerPort": 80,
@@ -45,12 +53,13 @@ DEFINITION
 
 # Define ECS task definition for backend
 resource "aws_ecs_task_definition" "backend_task" {
-  family                   = "backend-task"
-  container_definitions   = <<DEFINITION
+  family                = "backend-task"
+  container_definitions = <<DEFINITION
 [
   {
     "name": "backend",
     "image": "new_back",
+    "memory": 512,
     "portMappings": [
       {
         "containerPort": 8080,
@@ -61,6 +70,7 @@ resource "aws_ecs_task_definition" "backend_task" {
 ]
 DEFINITION
 }
+
 
 # Define ECS service for frontend
 resource "aws_ecs_service" "frontend_service" {

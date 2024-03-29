@@ -20,7 +20,7 @@
                  :data-cell="index"
                  class="cell"
                  @click="handleClick(index)"
-                 :style="{ pointerEvents: gameActive && currentPlayer === 'x' ? 'auto' : 'none'}">
+                 :style="{ pointerEvents: gameActive && currentPlayer === 'x' ? 'auto' : 'none' && !gameEnded && startingPlayer!=null}">
                 {{ cell }}
             </div>
         </div>
@@ -28,7 +28,7 @@
         <button class="restart-button" @click="onLeave">Restart</button>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/vue@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.1.4/sockjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script src="vueScript.js"></script>

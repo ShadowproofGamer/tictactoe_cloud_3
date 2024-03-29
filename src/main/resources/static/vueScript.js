@@ -11,7 +11,7 @@ const WINNING_COMBINATIONS = [
     [2, 4, 6]
 ];
 
-new Vue({
+let newApp = new Vue({
     el: '#app',
     data: {
         loggedIn: false,
@@ -57,6 +57,8 @@ new Vue({
         },
 
         onLeave() {
+            this.gameActive = false;
+            this.gameEnded = true;
             if (this.roomNumber != null) {
                 this.roomConnection.unsubscribe();
                 this.stompClient.send("/app/room/" + this.roomNumber,
@@ -64,8 +66,8 @@ new Vue({
                     JSON.stringify({type: 'LEAVE', username: this.userGUID, content: "Want to leave"})
                 );
                 this.roomNumber = null;
-                this.startingPlayer = null;
             }
+            this.startingPlayer = null;
             this.cells = Array(9).fill(''); // Reset cells
             this.statusDisplay = 'Waiting for game...';
             this.onRestart()
@@ -109,7 +111,8 @@ new Vue({
                 this.startingPlayer = null;
             } else if (message.type === 'ROOM') {
                 // console.log(message.roomNumber);
-                if (message.playerStarting != null) {
+                if (message.playerStarting != null && message.player2 != null) {
+                    console.log(message.playerStarting + "     "+ message.player2)
                     this.gameEnded = false;
                     this.startingPlayer = message.playerStarting;
                     if (this.startingPlayer === this.userGUID) this.startGame();
@@ -143,6 +146,7 @@ new Vue({
             this.statusDisplay = `Your turn`;
             this.gameActive = true;
             this.gameEnded = false;
+            this.currentPlayer = X_CLASS;
         },
 
 
