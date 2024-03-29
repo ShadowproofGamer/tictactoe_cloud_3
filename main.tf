@@ -88,7 +88,7 @@ resource "aws_ecs_task_definition" "backend_task" {
       {
         name : "backend",
         image : aws_ecr_repository.backend-ecr-repo.repository_url,
-        memory : 512,
+        memory : 1024,
         cpu : 512
 
         portMappings : [
