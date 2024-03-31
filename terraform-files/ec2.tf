@@ -1,7 +1,7 @@
 resource "aws_launch_template" "ecs_lt" {
   name_prefix   = "ecs-template"
   image_id      = "ami-0c101f26f147fa7fd"
-  instance_type = "t2.medium"
+  instance_type = "t2.micro"
 
   key_name               = "vockey"
   vpc_security_group_ids = [aws_security_group.instance_sg.id]
@@ -19,15 +19,15 @@ resource "aws_launch_template" "ecs_lt" {
 
   tag_specifications {
     resource_type = "instance"
-    tags = {
+    tags          = {
       Name = "tictactoe-ecs-instance"
     }
   }
 
-#  user_data = filebase64("${path.module}/ecs.sh")
-  user_data = <<-EOF
-              #!/bin/bash
-              echo ECS_CLUSTER=${aws_ecs_cluster.tictactoe_cluster.name} >> /etc/ecs/ecs.config
-              yum install -y aws-cli
-              EOF
+  user_data = filebase64("ecs.sh") #"${path.module}/ecs.sh"
+  #  user_data = <<-EOF
+  #              #!/bin/bash
+  #              echo ECS_CLUSTER=${aws_ecs_cluster.tictactoe_cluster.name} >> /etc/ecs/ecs.config
+  #              yum install -y aws-cli
+  #              EOF
 }

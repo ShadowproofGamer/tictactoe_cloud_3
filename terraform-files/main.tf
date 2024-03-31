@@ -9,7 +9,7 @@ terraform {
 }
 provider "aws" {
   region              = "us-east-1"
-  shared_config_files = ["C:/Users/Kuba/.aws/config"]
+#  shared_config_files = ["C:/Users/Kuba/.aws/config"]
   #  shared_credentials_files = ["C:/Users/Kuba/.aws/creds"]
   #  profile                  = "customprofile"
 }
@@ -61,7 +61,7 @@ resource "aws_ecs_task_definition" "frontend_task" {
       {
         name : "frontend",
         image : aws_ecr_repository.frontend-ecr-repo.repository_url,
-        memory : 512,
+        memory : 256,
         cpu : 512
         portMappings : [
           {
@@ -88,7 +88,7 @@ resource "aws_ecs_task_definition" "backend_task" {
       {
         name : "backend",
         image : aws_ecr_repository.backend-ecr-repo.repository_url,
-        memory : 1024,
+        memory : 512,
         cpu : 512
 
         portMappings : [
@@ -119,14 +119,6 @@ resource "aws_ecs_service" "frontend_service" {
     subnets         = [aws_subnet.subnet.id, aws_subnet.subnet2.id]
     security_groups = [aws_security_group.instance_sg.id]
   }
-  force_new_deployment = true
-  placement_constraints {
-    type = "distinctInstance"
-  }
-
-  triggers = {
-    redeployment = timestamp()
-  }
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.ecs_capacity_provider.name
@@ -154,14 +146,6 @@ resource "aws_ecs_service" "backend_service" {
   network_configuration {
     subnets         = [aws_subnet.subnet.id, aws_subnet.subnet2.id]
     security_groups = [aws_security_group.instance_sg.id]
-  }
-  force_new_deployment = true
-  placement_constraints {
-    type = "distinctInstance"
-  }
-
-  triggers = {
-    redeployment = timestamp()
   }
 
   capacity_provider_strategy {
