@@ -6,7 +6,7 @@ resource "aws_autoscaling_group" "ecs_asg" {
   force_delete = true
 
   launch_template {
-    id      = aws_launch_template.ecs_lt.id
+    id      = aws_launch_template.ttt_ecs_lt.id
     version = "$Latest"
   }
   tag {

@@ -1,7 +1,8 @@
-resource "aws_launch_template" "ecs_lt" {
-  name_prefix   = "ecs-template"
-  image_id      = "ami-0c101f26f147fa7fd"
+resource "aws_launch_template" "ttt_ecs_lt" {
+  name_prefix   = "tictactoe-ecs-template"
+  image_id      = "ami-0dc67873410203528"
   instance_type = "t2.micro"
+  instance_initiated_shutdown_behavior = "terminate"
 
   key_name               = "vockey"
   vpc_security_group_ids = [aws_security_group.instance_sg.id]
@@ -24,10 +25,10 @@ resource "aws_launch_template" "ecs_lt" {
     }
   }
 
-  user_data = filebase64("ecs.sh") #"${path.module}/ecs.sh"
+  user_data = filebase64("${path.module}/ecs.sh") #"${path.module}/ecs.sh"
   #  user_data = <<-EOF
   #              #!/bin/bash
-  #              echo ECS_CLUSTER=${aws_ecs_cluster.tictactoe_cluster.name} >> /etc/ecs/ecs.config
+  #              sudo echo ECS_CLUSTER=${aws_ecs_cluster.tictactoe_cluster.name} >> /etc/ecs/ecs.config
   #              yum install -y aws-cli
   #              EOF
 }
