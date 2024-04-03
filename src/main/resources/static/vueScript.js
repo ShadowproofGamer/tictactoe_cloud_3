@@ -31,7 +31,7 @@ let newApp = new Vue({
         connect() {
             if (this.username.trim()) {
                 this.loggedIn = true;
-                const socket = new SockJS('http://localhost:8080/ws');
+                const socket = new SockJS('http://44.219.27.51:8080/ws');
                 this.stompClient = Stomp.over(socket);
 
                 this.stompClient.connect({}, this.onConnected, this.onError);
